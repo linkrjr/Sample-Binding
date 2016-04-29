@@ -8,13 +8,34 @@
 
 import UIKit
 
-extension UILabel {
+infix operator ->> { associativity left precedence 105 }
+
+func ->><T>(left: Dynamic<T>, right: Bond<T>) {
+    right.bind(left)
+}
+
+func ->><T, U: Bondable where U.BondType == T>(left: Dynamic<T>, right: U) {
+    left ->> right.designatedBond
+}
+
+protocol Bondable {
+    associatedtype BondType
+    var designatedBond: Bond<BondType> { get }
+}
+
+extension UILabel: Bondable {
+    
+    typealias BondType = String
+    
+    var designatedBond: Bond<BondType> {
+        return self.textBond
+    }
     
     struct AssociatedKeys {
         static var BondKey:UInt8 = 0
     }
 
-    var textBond: Bond<String> {
+    var textBond: Bond<BondType> {
         
         if let b: AnyObject = objc_getAssociatedObject(self, &AssociatedKeys.BondKey) {
             return b as! Bond<String>
@@ -87,6 +108,8 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         self.nameLabel.textBond.bind(self.name)
+        
+//        tapCount.map { "\($0)" } ->> self.nameLabel2
         
         self.nameLabel2.textBond.bind(self.tapCount.map({ (v) -> String in
             return "\(v)"
